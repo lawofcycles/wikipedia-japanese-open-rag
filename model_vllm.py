@@ -8,7 +8,7 @@ from vllm.utils import random_uuid
 
 # Initialize the LLM Engine
 def init_engine():
-    engine_args = AsyncEngineArgs(model=model_id, dtype='bfloat16', disable_log_requests=True, disable_log_stats=True)
+    engine_args = AsyncEngineArgs(model=model_id, dtype='bfloat16',tensor_parallel_size=4, disable_log_requests=True, disable_log_stats=True)
     engine = AsyncLLMEngine.from_engine_args(engine_args)
 
     return engine
