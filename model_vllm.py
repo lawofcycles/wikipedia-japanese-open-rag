@@ -90,14 +90,12 @@ async def run(
         repetition_penalty=repetition_penalty,
     )
 
-    logger.info(f'queue: {request_id}')
     results_generator = engine.generate(
         prompt=prompt,
         sampling_params=sampling_params,
         request_id=request_id,
     )
 
-    # Streaming case
     async def stream_results() -> AsyncGenerator:
         async for request_output in results_generator:
             yield ''.join([output.text for output in request_output.outputs])
