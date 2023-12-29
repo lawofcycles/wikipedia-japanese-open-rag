@@ -36,7 +36,7 @@ def get_wikija_ds(name: str = WIKIPEDIA_JS_DS_NAME):
 
 ds = get_wikija_ds()
 
-TITLE = '### multilingual-e5-largeとELYZA-japanese-Llama-2-13b-instructによるWikipedia日本語ページをコーパスとするRAGアプリ'
+TITLE = '## multilingual-e5-largeとELYZA-japanese-Llama-2-13b-instructによるWikipedia日本語ページをコーパスとするRAGアプリ'
 
 def clear_and_save_textbox(message: str) -> tuple[str, str]:
     return '', message
@@ -156,13 +156,13 @@ with gr.Blocks(css='style.css') as demo:
     with gr.Group():
         chatbot = gr.Chatbot(
             label='Chatbot',
-            height=600,
+            height=400,
         )
         with gr.Column():
             textbox = gr.Textbox(
                 container=False,
                 show_label=False,
-                placeholder='指示を入力してください。例: カレーとハンバーグを組み合わせた美味しい料理を3つ教えて',
+                placeholder='おとぎ銃士 赤ずきんのあらすじを詳しく教えて',
                 scale=10,
                 lines=10,
             )
