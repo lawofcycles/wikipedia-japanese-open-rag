@@ -63,12 +63,6 @@ def get_prompt(question: str, contexts: str,  chat_history: list[tuple[str, str]
     return ''.join(texts)
 
 
-def get_input_token_length(message: str, chat_history: list[tuple[str, str]], system_prompt: str) -> int:
-    prompt = get_prompt(message, chat_history, system_prompt)
-    input_ids = tokenizer([prompt], return_tensors='np', add_special_tokens=False)['input_ids']
-    return input_ids.shape[-1]
-
-
 # Function to generate a response
 async def generate_response(engine, prompt: str):
     request_id = random_uuid()

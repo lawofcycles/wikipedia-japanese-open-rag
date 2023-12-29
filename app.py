@@ -137,17 +137,6 @@ async def generate(
         yield history + [(question, response)]
 
 
-def check_input_token_length(message: str, chat_history: list[tuple[str, str]], system_prompt: str) -> None:
-    input_token_length = get_input_token_length(message, chat_history, system_prompt)
-    if input_token_length > MAX_INPUT_TOKEN_LENGTH:
-        raise gr.Error(
-            f'合計対話長が長すぎます ({input_token_length} > {MAX_INPUT_TOKEN_LENGTH})。入力文章を短くするか、「🗑️  これまでの出力を消す」ボタンを押してから再実行してください。'
-        )
-
-    if len(message) <= 0:
-        raise gr.Error('入力が空です。1文字以上の文字列を入力してください。')
-
-
 def convert_history_to_str(history: list[tuple[str, str]]) -> str:
     res = []
     for user_utt, sys_utt in history:
@@ -230,11 +219,6 @@ with gr.Blocks(css='style.css') as demo:
         outputs=[textbox, saved_input],
         api_name=False,
         queue=False,
-    ).then(
-        fn=check_input_token_length,
-        inputs=[saved_input, chatbot, system_prompt],
-        api_name=False,
-        queue=False,
     ).success(
         fn=display_input,
         inputs=[saved_input, chatbot],
@@ -271,12 +255,6 @@ with gr.Blocks(css='style.css') as demo:
             queue=False,
         )
         .then(
-            fn=check_input_token_length,
-            inputs=[saved_input, chatbot, system_prompt],
-            api_name=False,
-            queue=False,
-        )
-        .success(
             fn=display_input,
             inputs=[saved_input, chatbot],
             outputs=chatbot,
@@ -312,11 +290,6 @@ with gr.Blocks(css='style.css') as demo:
         api_name=False,
         queue=False,
     ).then(
-        fn=check_input_token_length,
-        inputs=[saved_input, chatbot, system_prompt],
-        api_name=False,
-        queue=False,
-    ).success(
         fn=display_input,
         inputs=[saved_input, chatbot],
         outputs=chatbot,
