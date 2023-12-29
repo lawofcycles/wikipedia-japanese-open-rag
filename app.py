@@ -18,6 +18,24 @@ WIKIPEDIA_JA_DS = "singletongue/wikipedia-utils"
 WIKIPEDIA_JS_DS_NAME = "passages-c400-jawiki-20230403"
 WIKIPEDIA_JA_EMB_DS = "hotchpotch/wikipedia-passages-jawiki-embeddings"
 
+def get_model(name: str, max_seq_length=512):
+    device = "cpu"
+    if torch.cuda.is_available():
+        device = "cuda"
+    elif torch.backends.mps.is_available():
+        device = "mps"
+    model = SentenceTransformer(name, device=device)
+    model.max_seq_length = max_seq_length
+    return model
+
+emb_model = get_model(name = "intfloat/multilingual-e5-large")
+
+def get_wikija_ds(name: str = WIKIPEDIA_JS_DS_NAME):
+    ds = load_dataset(path=WIKIPEDIA_JA_DS, name=name, split="train")
+    return ds
+
+ds = get_wikija_ds()
+
 TITLE = '# ELYZA-japanese-Llama-2-13b-instruct'
 
 def clear_and_save_textbox(message: str) -> tuple[str, str]:
@@ -36,20 +54,6 @@ def delete_prev_fn(history: list[tuple[str, str]]) -> tuple[list[tuple[str, str]
         message = ''
     return history, message or ''
 
-
-def get_model(name: str, max_seq_length=512):
-    device = "cpu"
-    if torch.cuda.is_available():
-        device = "cuda"
-    elif torch.backends.mps.is_available():
-        device = "mps"
-    model = SentenceTransformer(name, device=device)
-    model.max_seq_length = max_seq_length
-    return model
-
-def get_wikija_ds(name: str = WIKIPEDIA_JS_DS_NAME):
-    ds = load_dataset(path=WIKIPEDIA_JA_DS, name=name, split="train")
-    return ds
 
 def get_faiss_index(
     index_name: str, ja_emb_ds: str = WIKIPEDIA_JA_EMB_DS, name=WIKIPEDIA_JS_DS_NAME
@@ -97,13 +101,13 @@ async def generate(
     if max_new_tokens > MAX_MAX_NEW_TOKENS:
         raise ValueError
 
-    emb_model = get_model(name = "intfloat/multilingual-e5-large")
+    global emb_model
+    global ds
     emb_model_pq = "256"
     index_emb_model_name = "multilingual-e5-large-passage"
     index_name = f"{index_emb_model_name}/index_IVF2048_PQ{emb_model_pq}.faiss"
     get_faiss_index(index_name=index_name)
     faiss_index = 128
-    ds = get_wikija_ds()
 
     contexts = []
     scores = []
