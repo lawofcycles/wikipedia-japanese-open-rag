@@ -6,6 +6,23 @@ from vllm.engine.async_llm_engine import AsyncLLMEngine
 from vllm.sampling_params import SamplingParams
 from vllm.utils import random_uuid
 
+DEFAULT_QA_PROMPT = """
+## Instruction
+
+Prepare an explanatory statement for the question, including as much detailed explanation as possible.
+Avoid speculations or information not contained in the contexts. Heavily favor knowledge provided in the documents before falling back to baseline knowledge or other contexts. If searching the contexts didn"t yield any answer, just say that.
+
+Responses must be given in Japanese.
+
+## Contexts
+
+{contexts}
+
+## Question
+
+{question}
+""".strip()
+
 # Initialize the LLM Engine
 def init_engine():
     engine_args = AsyncEngineArgs(model=model_id, dtype='bfloat16',tensor_parallel_size=4, disable_log_requests=True, disable_log_stats=True)
@@ -30,8 +47,11 @@ async def stream_results(prompt, sampling_params):
         yield text_outputs
 
 
-def get_prompt(message: str, chat_history: list[tuple[str, str]], system_prompt: str) -> str:
+def get_prompt(question: str, contexts: str,  chat_history: list[tuple[str, str]], system_prompt: str) -> str:
     texts = [f'<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n']
+        
+    message = DEFAULT_QA_PROMPT.format(contexts=to_contexts(contexts), question=question)
+    
     # The first user input is _not_ stripped
     do_strip = False
     for user_input, response in chat_history:
@@ -63,9 +83,18 @@ async def generate_response(engine, prompt: str):
     text_outputs = [output.text for output in final_output.outputs]
     return text_outputs
 
+def to_contexts(passages):
+    contexts = ""
+    for passage in passages:
+        title = passage["title"]
+        text = passage["text"]
+        # section = passage["section"]
+        contexts += f"- {title}: {text}\n"
+    return contexts
 
 async def run(
     message: str,
+    contexts: list[str],
     chat_history: list[tuple[str, str]],
     system_prompt: str,
     max_new_tokens: int = 1024,
@@ -77,7 +106,8 @@ async def run(
     stream: bool = False,
 ) -> AsyncGenerator | str:
     request_id = random_uuid()
-    prompt = get_prompt(message=message, chat_history=chat_history, system_prompt=system_prompt)
+
+    prompt = get_prompt(message=message, contexts = contexts,chat_history=chat_history, system_prompt=system_prompt)
 
     if not do_sample:
         # greedy

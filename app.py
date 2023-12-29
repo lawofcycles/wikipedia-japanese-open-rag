@@ -1,13 +1,22 @@
 from typing import AsyncGenerator
 import asyncio
+import torch
+import faiss
+from time import time
 import gradio as gr
-
+from datasets.download import DownloadManager
+from sentence_transformers import SentenceTransformer
 from model_vllm import get_input_token_length, run
+from datasets import load_dataset 
 
 DEFAULT_SYSTEM_PROMPT = 'あなたは誠実で優秀な日本人のアシスタントです。'
 MAX_MAX_NEW_TOKENS = 2048
 DEFAULT_MAX_NEW_TOKENS = 512
 MAX_INPUT_TOKEN_LENGTH = 4000
+
+WIKIPEDIA_JA_DS = "singletongue/wikipedia-utils"
+WIKIPEDIA_JS_DS_NAME = "passages-c400-jawiki-20230403"
+WIKIPEDIA_JA_EMB_DS = "hotchpotch/wikipedia-passages-jawiki-embeddings"
 
 TITLE = '# ELYZA-japanese-Llama-2-13b-instruct'
 
@@ -28,8 +37,54 @@ def delete_prev_fn(history: list[tuple[str, str]]) -> tuple[list[tuple[str, str]
     return history, message or ''
 
 
+def get_model(name: str, max_seq_length=512):
+    device = "cpu"
+    if torch.cuda.is_available():
+        device = "cuda"
+    elif torch.backends.mps.is_available():
+        device = "mps"
+    model = SentenceTransformer(name, device=device)
+    model.max_seq_length = max_seq_length
+    return model
+
+def get_wikija_ds(name: str = WIKIPEDIA_JS_DS_NAME):
+    ds = load_dataset(path=WIKIPEDIA_JA_DS, name=name, split="train")
+    return ds
+
+def get_faiss_index(
+    index_name: str, ja_emb_ds: str = WIKIPEDIA_JA_EMB_DS, name=WIKIPEDIA_JS_DS_NAME
+):
+    target_path = f"faiss_indexes/{name}/{index_name}"
+    dm = DownloadManager()
+    index_local_path = dm.download(
+        f"https://huggingface.co/datasets/{ja_emb_ds}/resolve/main/{target_path}"
+    )
+    index = faiss.read_index(index_local_path)
+    index.nprobe = 128
+    return index
+
+def text_to_emb(model, text: str, prefix: str):
+    return model.encode([prefix + text], normalize_embeddings=True)
+
+def search(
+    faiss_index, emb_model, ds, question: str, search_text_prefix: str, top_k: int
+):
+    start_time = time()
+    emb = text_to_emb(emb_model, question, search_text_prefix)
+    emb_exec_time = time() - start_time
+    scores, indexes = faiss_index.search(emb, top_k)
+    faiss_seartch_time = time() - emb_exec_time - start_time
+    scores = scores[0]
+    indexes = indexes[0]
+    results = []
+    for idx, score in zip(indexes, scores):  # type: ignore
+        idx = int(idx)
+        passage = ds[idx]
+        results.append((score, passage))
+    return results, emb_exec_time, faiss_seartch_time
+
 async def generate(
-    message: str,
+    question: str,
     history_with_input: list[tuple[str, str]],
     system_prompt: str,
     max_new_tokens: int,
@@ -42,9 +97,32 @@ async def generate(
     if max_new_tokens > MAX_MAX_NEW_TOKENS:
         raise ValueError
 
+    emb_model = get_model(name = "intfloat/multilingual-e5-large")
+    emb_model_pq = "256"
+    index_emb_model_name = "multilingual-e5-large-passage"
+    index_name = f"{index_emb_model_name}/index_IVF2048_PQ{emb_model_pq}.faiss"
+    get_faiss_index(index_name=index_name)
+    faiss_index = 128
+    ds = get_wikija_ds()
+
+    contexts = []
+    scores = []
+    search_results, emb_exec_time, faiss_seartch_time = search(
+        faiss_index,
+        emb_model,
+        ds,
+        question,
+        search_text_prefix="passage",
+        top_k=3,
+    )
+    for score, passage in search_results:
+        scores.append(score)
+        contexts.append(passage)
+
     history = history_with_input[:-1]
     stream = await run(
-        message=message,
+        question=question,
+        context = contexts,
         chat_history=history,
         system_prompt=system_prompt,
         max_new_tokens=max_new_tokens,
@@ -56,24 +134,8 @@ async def generate(
         stream=True,
     )
     async for response in stream:
-        yield history + [(message, response)]
+        yield history + [(question, response)]
 
-
-def process_example(message: str) -> tuple[str, list[tuple[str, str]]]:
-    response = asyncio.run(run(
-        message=message,
-        chat_history=[],
-        system_prompt=DEFAULT_SYSTEM_PROMPT,
-        max_new_tokens=DEFAULT_MAX_NEW_TOKENS,
-        temperature=1,
-        top_p=0.95,
-        top_k=50,
-        do_sample=False,
-        repetition_penalty=1.0,
-        stream=False
-    ))
-
-    return '', [(message, response)]
 
 def check_input_token_length(message: str, chat_history: list[tuple[str, str]], system_prompt: str) -> None:
     input_token_length = get_input_token_length(message, chat_history, system_prompt)
@@ -110,7 +172,7 @@ with gr.Blocks(css='style.css') as demo:
                 lines=10,
             )
             submit_button = gr.Button(
-                '以下の説明文・免責事項・データ利用に同意して送信', variant='primary', scale=1, min_width=0
+                '送信', variant='primary', scale=1, min_width=0
             )
     with gr.Row():
         retry_button = gr.Button('🔄  同じ入力でもう一度生成', variant='secondary')
@@ -310,4 +372,4 @@ with gr.Blocks(css='style.css') as demo:
         outputs=output_textbox,
     )
 
-demo.queue(max_size=5).launch(server_name='0.0.0.0')
+demo.queue(max_size=5).launch(server_name='0.0.0.0',share=True)
