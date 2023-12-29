@@ -51,13 +51,13 @@ def get_prompt(question: str, contexts: str,  chat_history: list[tuple[str, str]
         
     message = DEFAULT_QA_PROMPT.format(contexts=to_contexts(contexts), question=question)
     
-    # The first user input is _not_ stripped
-    do_strip = False
-    for user_input, response in chat_history:
-        user_input = user_input.strip() if do_strip else user_input
-        do_strip = True
-        texts.append(f'{user_input} [/INST] {response.strip()} </s><s>[INST] ')
-    message = message.strip() if do_strip else message
+    # # The first user input is _not_ stripped
+    # do_strip = False
+    # for user_input, response in chat_history:
+    #     user_input = user_input.strip() if do_strip else user_input
+    #     do_strip = True
+    #     texts.append(f'{user_input} [/INST] {response.strip()} </s><s>[INST] ')
+    # message = message.strip() if do_strip else message
     texts.append(f'{message} [/INST]')
     return ''.join(texts)
 
