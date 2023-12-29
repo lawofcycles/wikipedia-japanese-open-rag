@@ -87,7 +87,7 @@ def to_contexts(passages):
     return contexts
 
 async def run(
-    message: str,
+    question: str,
     contexts: list[str],
     chat_history: list[tuple[str, str]],
     system_prompt: str,
@@ -101,7 +101,7 @@ async def run(
 ) -> AsyncGenerator | str:
     request_id = random_uuid()
 
-    prompt = get_prompt(message=message, contexts = contexts,chat_history=chat_history, system_prompt=system_prompt)
+    prompt = get_prompt(question=question, contexts = contexts,chat_history=chat_history, system_prompt=system_prompt)
 
     if not do_sample:
         # greedy
