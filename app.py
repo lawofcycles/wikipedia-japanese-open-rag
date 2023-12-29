@@ -36,7 +36,7 @@ def get_wikija_ds(name: str = WIKIPEDIA_JS_DS_NAME):
 
 ds = get_wikija_ds()
 
-TITLE = '# ELYZA-japanese-Llama-2-13b-instruct'
+TITLE = '### multilingual-e5-largeとELYZA-japanese-Llama-2-13b-instructによるWikipedia日本語ページをコーパスとするRAGアプリ'
 
 def clear_and_save_textbox(message: str) -> tuple[str, str]:
     return '', message
@@ -176,9 +176,6 @@ with gr.Blocks(css='style.css') as demo:
 
     saved_input = gr.State()
     uuid_list = gr.State([])
-
-    with gr.Accordion(label='LLMに投入したWikipediaの記事', open=False):
-        ref_context = gr.Markdown()
 
     with gr.Accordion(label='上の対話履歴をスクリーンショット用に整形', open=False):
         output_textbox = gr.Markdown()
