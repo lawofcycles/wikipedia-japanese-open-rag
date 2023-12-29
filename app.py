@@ -164,7 +164,7 @@ with gr.Blocks(css='style.css') as demo:
                 show_label=False,
                 placeholder='おとぎ銃士 赤ずきんのあらすじを詳しく教えて',
                 scale=10,
-                lines=10,
+                lines=3,
             )
             submit_button = gr.Button(
                 '送信', variant='primary', scale=1, min_width=0
