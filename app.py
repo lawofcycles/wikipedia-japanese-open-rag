@@ -6,7 +6,7 @@ from time import time
 import gradio as gr
 from datasets.download import DownloadManager
 from sentence_transformers import SentenceTransformer
-from model_vllm import get_input_token_length, run
+from model_vllm import run
 from datasets import load_dataset 
 
 DEFAULT_SYSTEM_PROMPT = 'あなたは誠実で優秀な日本人のアシスタントです。'
