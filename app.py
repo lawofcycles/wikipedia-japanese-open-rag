@@ -126,7 +126,7 @@ async def generate(
     history = history_with_input[:-1]
     stream = await run(
         question=question,
-        context = contexts,
+        contexts = contexts,
         chat_history=history,
         system_prompt=system_prompt,
         max_new_tokens=max_new_tokens,
