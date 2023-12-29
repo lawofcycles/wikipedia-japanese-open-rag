@@ -9,9 +9,8 @@ from vllm.utils import random_uuid
 DEFAULT_QA_PROMPT = """
 ## Instruction
 
-Wikipediaの参考情報を元に、質問への回答とコメントをしてください。
-Wikipediaの参考情報を引用しながら回答してください。
-回答はWikipediaの参考情報だけを元に作成し、推測を含めないでください。参考情報に答えが見つからなかった場合は、その旨を述べてください。
+Wikipediaの参考情報を元に、必要に応じてWikipediaの参考情報を引用しながら、質問に回答してください。
+回答はWikipediaの参考情報だけを元に作成し、推測や一般的な知識を含めないでください。Wikipediaの参考情報に答えが見つからなかった場合は、その旨を述べてください。
 
 ## Wikipediaの参考情報
 
