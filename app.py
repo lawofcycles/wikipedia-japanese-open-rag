@@ -107,7 +107,7 @@ async def generate(
     index_emb_model_name = "multilingual-e5-large-passage"
     index_name = f"{index_emb_model_name}/index_IVF2048_PQ{emb_model_pq}.faiss"
     get_faiss_index(index_name=index_name)
-    faiss_index = 128
+    faiss_index.nprobe = 128
 
     contexts = []
     scores = []
