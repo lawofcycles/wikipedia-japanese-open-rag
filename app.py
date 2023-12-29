@@ -116,7 +116,7 @@ async def generate(
         emb_model,
         ds,
         question,
-        search_text_prefix="passage",
+        search_text_prefix="query",
         top_k=5,
     )
     print(search_results)
