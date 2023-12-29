@@ -117,8 +117,9 @@ async def generate(
         ds,
         question,
         search_text_prefix="passage",
-        top_k=3,
+        top_k=1,
     )
+    print(search_results)
     for score, passage in search_results:
         scores.append(score)
         contexts.append(passage)
@@ -139,6 +140,7 @@ async def generate(
     )
     async for response in stream:
         yield history + [(question, response)]
+    
 
 
 def convert_history_to_str(history: list[tuple[str, str]]) -> str:
@@ -174,6 +176,9 @@ with gr.Blocks(css='style.css') as demo:
 
     saved_input = gr.State()
     uuid_list = gr.State([])
+
+    with gr.Accordion(label='LLMに投入したWikipediaの記事', open=False):
+        ref_context = gr.Markdown()
 
     with gr.Accordion(label='上の対話履歴をスクリーンショット用に整形', open=False):
         output_textbox = gr.Markdown()
