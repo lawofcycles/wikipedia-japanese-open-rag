@@ -9,16 +9,14 @@ from vllm.utils import random_uuid
 DEFAULT_QA_PROMPT = """
 ## Instruction
 
-Prepare an explanatory statement for the question, including as much detailed explanation as possible.
-Avoid speculations or information not contained in the contexts. Heavily favor knowledge provided in the documents before falling back to baseline knowledge or other contexts. If searching the contexts didn"t yield any answer, just say that.
+質問にできるだけ詳細に答えてください。
+参考情報だけを元に回答して、推測に基づく回答は避けること。参考情報に答えが見つからなかった場合は、その旨を述べること。
 
-Responses must be given in Japanese.
-
-## Contexts
+## 参考情報
 
 {contexts}
 
-## Question
+## 質問
 
 {question}
 """.strip()
