@@ -117,7 +117,7 @@ async def generate(
         ds,
         question,
         search_text_prefix="passage",
-        top_k=1,
+        top_k=5,
     )
     print(search_results)
     for score, passage in search_results:
