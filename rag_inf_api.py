@@ -115,7 +115,7 @@ inferenceEngine = InferenceEngine()
 @app.post("/question")
 async def instruct(body: QuestionRequest):
     async def generate():
-        async for item in inferenceEngine.run(
+        async for item in await inferenceEngine.run(
             question=body.question,
             max_new_tokens=body.max_new_tokens,
             temperature=body.temperature,
