@@ -29,7 +29,6 @@ def delete_prev_fn(history: list[tuple[str, str]]) -> tuple[list[tuple[str, str]
 async def generate(
     question: str,
     history_with_input: list[tuple[str, str]],
-    system_prompt: str,
     max_new_tokens: int,
     temperature: float,
     top_p: float,
@@ -43,7 +42,6 @@ async def generate(
     history = history_with_input[:-1]
     stream = await inferenceEngine.run(
         question=question,
-        system_prompt=system_prompt,
         max_new_tokens=max_new_tokens,
         temperature=float(temperature),
         top_p=float(top_p),
@@ -93,7 +91,6 @@ with gr.Blocks(css='style.css') as demo:
         output_textbox = gr.Markdown()
 
     with gr.Accordion(label='詳細設定', open=False):
-        system_prompt = gr.Textbox(label='システムプロンプト', value=DEFAULT_SYSTEM_PROMPT, lines=8)
         max_new_tokens = gr.Slider(
             label='最大出力トークン数',
             minimum=1,
@@ -148,7 +145,6 @@ with gr.Blocks(css='style.css') as demo:
         inputs=[
             saved_input,
             chatbot,
-            system_prompt,
             max_new_tokens,
             temperature,
             top_p,
@@ -183,7 +179,6 @@ with gr.Blocks(css='style.css') as demo:
             inputs=[
                 saved_input,
                 chatbot,
-                system_prompt,
                 max_new_tokens,
                 temperature,
                 top_p,
@@ -218,7 +213,6 @@ with gr.Blocks(css='style.css') as demo:
         inputs=[
             saved_input,
             chatbot,
-            system_prompt,
             max_new_tokens,
             temperature,
             top_p,
