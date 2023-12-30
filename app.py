@@ -48,7 +48,6 @@ async def generate(
         top_k=top_k,
         do_sample=do_sample,
         repetition_penalty=float(repetition_penalty),
-        stream=True,
     )
     async for response in stream:
         yield history + [(question, response)]
