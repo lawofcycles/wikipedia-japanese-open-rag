@@ -63,3 +63,4 @@ class TextSearcher:
 
 def create_text_searcher():
     return TextSearcher()
+

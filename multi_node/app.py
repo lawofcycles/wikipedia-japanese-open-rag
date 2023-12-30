@@ -1,13 +1,13 @@
+from typing import AsyncGenerator, List, Tuple
 import gradio as gr
-from typing import AsyncGenerator
-from rag_inf import InferenceEngine
+import httpx
 
 MAX_MAX_NEW_TOKENS = 2048
 DEFAULT_MAX_NEW_TOKENS = 512
 MAX_INPUT_TOKEN_LENGTH = 4000
+API_URL = "http://localhost:8000/question"
 
 TITLE = '## multilingual-e5-largeとELYZA-japanese-Llama-2-13b-instructによるWikipedia日本語ページをコーパスとするRAGアプリ'
-inferenceEngine = InferenceEngine()
 
 def clear_and_save_textbox(message: str) -> tuple[str, str]:
     return '', message
@@ -40,18 +40,33 @@ async def generate(
         raise ValueError
 
     history = history_with_input[:-1]
-    stream = await inferenceEngine.run(
-        question=question,
-        max_new_tokens=max_new_tokens,
-        temperature=float(temperature),
-        top_p=float(top_p),
-        top_k=top_k,
-        do_sample=do_sample,
-        repetition_penalty=float(repetition_penalty),
-        stream = True,
-    )
-    async for response in stream:
-        yield history + [(question, response)]
+
+    data = {
+        "question": question,
+        "max_new_tokens": max_new_tokens,
+        "temperature": temperature,
+        "top_p": top_p,
+        "top_k": top_k,
+        "do_sample": do_sample,
+        "repetition_penalty": repetition_penalty
+    }
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(API_URL, json=data, stream=True)
+
+            if response.status_code != 200:
+                error_message = f"Error: Server responded with status code {response.status_code}"
+                yield history + [(question, error_message)]
+                return
+
+            async for line in response.aiter_lines():
+                if line:
+                    response_text = line.strip()
+                    yield history + [(question, response_text)]
+        except httpx.HTTPError as e:
+            error_message = f"HTTP request failed: {str(e)}"
+            yield history + [(question, error_message)]
 
 def convert_history_to_str(history: list[tuple[str, str]]) -> str:
     res = []
