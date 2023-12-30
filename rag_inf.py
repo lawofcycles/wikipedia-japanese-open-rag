@@ -6,10 +6,6 @@ from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.engine.async_llm_engine import AsyncLLMEngine
 from vllm.sampling_params import SamplingParams
 from vllm.utils import random_uuid
-import uvicorn
-from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
 
 DEFAULT_SYSTEM_PROMPT = 'あなたは誠実で優秀な日本人のアシスタントです。'
 DEFAULT_QA_PROMPT = """
@@ -63,7 +59,7 @@ class InferenceEngine:
         top_k: int = 50,
         do_sample: bool = False,
         repetition_penalty: float = 1.2,
-        stream: bool = True,
+        stream: bool = False,
     ) -> AsyncGenerator | str:
         contexts, scores = await self.search_contexts(question)
         prompt = self.get_prompt(question, contexts, system_prompt)
@@ -99,32 +95,3 @@ class InferenceEngine:
         )
         scores, contexts = zip(*search_results)
         return contexts, scores
-
-class QuestionRequest(BaseModel):
-    question: str
-    max_new_tokens: int = 1024
-    temperature: float = 0.8
-    top_p: float = 0.95
-    top_k: int = 50
-    do_sample: bool = False
-    repetition_penalty: float = 1.2
-
-app = FastAPI()
-inferenceEngine = InferenceEngine()
-
-@app.post("/question")
-async def instruct(body: QuestionRequest):
-    async def generate():
-        async for item in inferenceEngine.run(
-            question=body.question,
-            max_new_tokens=body.max_new_tokens,
-            temperature=body.temperature,
-            top_p=body.top_p,
-            top_k=body.top_k,
-            do_sample=body.do_sample,
-            repetition_penalty=body.repetition_penalty,
-            stream=True,
-        ):
-            yield item
-
-    return StreamingResponse(generate(), media_type="text/event-stream")
