@@ -52,7 +52,7 @@ class TextSearcher:
             results.append((score, passage))
         return results, emb_exec_time, faiss_search_time
     
-    def to_contexts(passages: List[dict]) -> str:
+    def to_contexts(self, passages: List[dict]) -> str:
         contexts = ""
         for passage in passages:
             title = passage["title"]
