@@ -48,17 +48,6 @@ class InferenceEngine:
         texts.append(f'{message} [/INST]')
         return ''.join(texts)
 
-    async def generate_response(self, prompt: str, sampling_params: SamplingParams) -> List[str]:
-        request_id = random_uuid()
-        results_generator = self.llm_engine.generate(prompt, sampling_params, request_id)
-
-        final_output = None
-        async for request_output in results_generator:
-            final_output = request_output
-
-        assert final_output is not None
-        text_outputs = [output.text for output in final_output.outputs]
-        return text_outputs
 
     async def run(
         self,
@@ -70,10 +59,10 @@ class InferenceEngine:
         top_k: int = 50,
         do_sample: bool = False,
         repetition_penalty: float = 1.2,
-    ) -> List[str]:
+        stream: bool = False,
+    ) -> AsyncGenerator | str:
         contexts, scores = await self.search_contexts(question)
         prompt = self.get_prompt(question, contexts, system_prompt)
-
         if not do_sample:
             temperature = 0
         sampling_params = SamplingParams(
@@ -84,8 +73,20 @@ class InferenceEngine:
             repetition_penalty=repetition_penalty,
         )
 
-        results = await self.generate_response(prompt, sampling_params)
-        return results
+        request_id = random_uuid()
+        results_generator = self.llm_engine.generate(prompt, sampling_params, request_id)
+
+        async def stream_results() -> AsyncGenerator:
+            async for request_output in results_generator:
+                yield ''.join([output.text for output in request_output.outputs])
+
+        if stream:
+            return stream_results()
+        else:
+            async for request_output in results_generator:
+                pass
+            return ''.join([output.text for output in request_output.outputs])
+
 
     async def search_contexts(self, question: str) -> Tuple[List[str], List[float]]:
         search_results, emb_exec_time, faiss_search_time = self.searcher.search(
