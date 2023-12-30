@@ -1,42 +1,13 @@
-from typing import AsyncGenerator
-import asyncio
-import torch
-import faiss
-from time import time
 import gradio as gr
-from datasets.download import DownloadManager
-from sentence_transformers import SentenceTransformer
-from model_vllm import run
-from datasets import load_dataset 
+from typing import AsyncGenerator
+from rag_inf import InferenceEngine
 
-DEFAULT_SYSTEM_PROMPT = 'あなたは誠実で優秀な日本人のアシスタントです。'
 MAX_MAX_NEW_TOKENS = 2048
 DEFAULT_MAX_NEW_TOKENS = 512
 MAX_INPUT_TOKEN_LENGTH = 4000
 
-WIKIPEDIA_JA_DS = "singletongue/wikipedia-utils"
-WIKIPEDIA_JS_DS_NAME = "passages-c400-jawiki-20230403"
-WIKIPEDIA_JA_EMB_DS = "hotchpotch/wikipedia-passages-jawiki-embeddings"
-
-def get_model(name: str, max_seq_length=512):
-    device = "cpu"
-    if torch.cuda.is_available():
-        device = "cuda"
-    elif torch.backends.mps.is_available():
-        device = "mps"
-    model = SentenceTransformer(name, device=device)
-    model.max_seq_length = max_seq_length
-    return model
-
-emb_model = get_model(name = "intfloat/multilingual-e5-large")
-
-def get_wikija_ds(name: str = WIKIPEDIA_JS_DS_NAME):
-    ds = load_dataset(path=WIKIPEDIA_JA_DS, name=name, split="train")
-    return ds
-
-ds = get_wikija_ds()
-
 TITLE = '## multilingual-e5-largeとELYZA-japanese-Llama-2-13b-instructによるWikipedia日本語ページをコーパスとするRAGアプリ'
+inferenceEngine = InferenceEngine()
 
 def clear_and_save_textbox(message: str) -> tuple[str, str]:
     return '', message
@@ -55,38 +26,6 @@ def delete_prev_fn(history: list[tuple[str, str]]) -> tuple[list[tuple[str, str]
     return history, message or ''
 
 
-def get_faiss_index(
-    index_name: str, ja_emb_ds: str = WIKIPEDIA_JA_EMB_DS, name=WIKIPEDIA_JS_DS_NAME
-):
-    target_path = f"faiss_indexes/{name}/{index_name}"
-    dm = DownloadManager()
-    index_local_path = dm.download(
-        f"https://huggingface.co/datasets/{ja_emb_ds}/resolve/main/{target_path}"
-    )
-    index = faiss.read_index(index_local_path)
-    index.nprobe = 128
-    return index
-
-def text_to_emb(model, text: str, prefix: str):
-    return model.encode([prefix + text], normalize_embeddings=True)
-
-def search(
-    faiss_index, emb_model, ds, question: str, search_text_prefix: str, top_k: int
-):
-    start_time = time()
-    emb = text_to_emb(emb_model, question, search_text_prefix)
-    emb_exec_time = time() - start_time
-    scores, indexes = faiss_index.search(emb, top_k)
-    faiss_seartch_time = time() - emb_exec_time - start_time
-    scores = scores[0]
-    indexes = indexes[0]
-    results = []
-    for idx, score in zip(indexes, scores):  # type: ignore
-        idx = int(idx)
-        passage = ds[idx]
-        results.append((score, passage))
-    return results, emb_exec_time, faiss_seartch_time
-
 async def generate(
     question: str,
     history_with_input: list[tuple[str, str]],
@@ -101,34 +40,9 @@ async def generate(
     if max_new_tokens > MAX_MAX_NEW_TOKENS:
         raise ValueError
 
-    global emb_model
-    global ds
-    emb_model_pq = "256"
-    index_emb_model_name = "multilingual-e5-large-passage"
-    index_name = f"{index_emb_model_name}/index_IVF2048_PQ{emb_model_pq}.faiss"
-    faiss_index = get_faiss_index(index_name=index_name)
-    faiss_index.nprobe = 128
-
-    contexts = []
-    scores = []
-    search_results, emb_exec_time, faiss_seartch_time = search(
-        faiss_index,
-        emb_model,
-        ds,
-        question,
-        search_text_prefix="query",
-        top_k=5,
-    )
-    print(search_results)
-    for score, passage in search_results:
-        scores.append(score)
-        contexts.append(passage)
-
     history = history_with_input[:-1]
-    stream = await run(
+    stream = await inferenceEngine.run(
         question=question,
-        contexts = contexts,
-        chat_history=history,
         system_prompt=system_prompt,
         max_new_tokens=max_new_tokens,
         temperature=float(temperature),
@@ -140,8 +54,6 @@ async def generate(
     )
     async for response in stream:
         yield history + [(question, response)]
-    
-
 
 def convert_history_to_str(history: list[tuple[str, str]]) -> str:
     res = []
