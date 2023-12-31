@@ -81,8 +81,13 @@ class InferenceEngine:
         results_generator = self.llm_engine.generate(prompt, sampling_params, request_id)
 
         async def stream_results() -> AsyncGenerator:
+            previous_text = ""
             async for request_output in results_generator:
-                yield ''.join([output.text for output in request_output.outputs])
+                current_text = ''.join([output.text for output in request_output.outputs])
+                if current_text != previous_text:
+                    diff_text = current_text[len(previous_text):]
+                    yield diff_text
+                    previous_text = current_text
 
         if stream:
             return stream_results()
