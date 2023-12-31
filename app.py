@@ -53,7 +53,8 @@ async def rag_inf_api(
     with s.post(API_URL, headers=headers, json=data, stream=True) as resp:
         for line in resp.iter_content(decode_unicode=True):
             if line:
-                yield line
+                output_text.append(line)
+                yield "".join(output_text)
 
     # async with httpx.AsyncClient() as client:
     #     try:
