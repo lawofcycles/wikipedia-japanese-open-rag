@@ -62,7 +62,7 @@ async def generate(
 
             async for line in response.aiter_lines():
                 if line:
-                    response_text = +line.strip()
+                    response_text += line.strip()
                     yield history + [(question, response_text)]
         except httpx.HTTPError as e:
             error_message = f"HTTP request failed: {str(e)}"
