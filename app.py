@@ -48,7 +48,7 @@ async def rag_inf_api(
 
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(API_URL, json=data)
+            response = await client.stream('POST',API_URL, json=data)
 
             if response.status_code != 200:
                 raise Exception(f"Error: Server responded with status code {response.status_code}")
