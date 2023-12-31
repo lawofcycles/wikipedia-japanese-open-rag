@@ -51,7 +51,7 @@ async def rag_inf_api(
             response = await client.post(API_URL, json=data)
 
             if response.status_code != 200:
-                raise f"Error: Server responded with status code {response.status_code}"
+                raise Exception(f"Error: Server responded with status code {response.status_code}")
 
             last_response = ""
             async for line in response.aiter_lines():
@@ -60,14 +60,15 @@ async def rag_inf_api(
                     if new_response.startswith(last_response):
                         new_characters = new_response[len(last_response):]
                         last_response += new_response
+                        print("contain: " + last_response)
                         if new_characters:
                             yield ''.join(last_response)
                     else:
                         last_response = new_response
+                        print("not contain: " + last_response)
                         yield ''.join(last_response)
         except httpx.HTTPError as e:
-            raise f"HTTP request failed: {str(e)}"
-            
+            raise Exception(f"HTTP request failed: {str(e)}")
 
 
 async def generate(
