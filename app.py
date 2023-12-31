@@ -60,11 +60,20 @@ async def generate(
                 yield history + [(question, error_message)]
                 return
 
-            response_text = ""
+            last_response = ""
             async for line in response.aiter_lines():
                 if line:
-                    response_text += line.strip()
-                    yield history + [(question, response_text)]
+                    new_response = line.strip()
+                    if new_response.startswith(last_response):
+                        # 前回のレスポンスにない新しい文字だけを取得
+                        new_characters = new_response[len(last_response):]
+                        last_response = new_response
+                        if new_characters:
+                            yield history + [(question, last_response)]
+                    else:
+                        # 異なるレスポンスが来た場合（通常は発生しない）
+                        last_response = new_response
+                        yield history + [(question, last_response)]
         except httpx.HTTPError as e:
             error_message = f"HTTP request failed: {str(e)}"
             yield history + [(question, error_message)]
