@@ -53,7 +53,7 @@ async def generate(
 
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(API_URL, json=data, stream=True)
+            response = await client.post(API_URL, json=data)
 
             if response.status_code != 200:
                 error_message = f"Error: Server responded with status code {response.status_code}"
