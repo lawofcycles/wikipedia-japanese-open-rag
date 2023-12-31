@@ -1,6 +1,6 @@
 from typing import AsyncGenerator, List, Tuple
 import gradio as gr
-import httpx
+import requests
 
 MAX_MAX_NEW_TOKENS = 2048
 DEFAULT_MAX_NEW_TOKENS = 512
@@ -46,19 +46,28 @@ async def rag_inf_api(
     "repetition_penalty": repetition_penalty
     }
 
-    async with httpx.AsyncClient() as client:
-        try:
-            async with client.stream('POST', API_URL, json=data) as response:
-                if response.status_code != 200:
-                    raise Exception(f"Error: Server responded with status code {response.status_code}")
+    headers = {"Accept": "text/event-stream"}
+    output_text = []
 
-                async for line in response.aiter_lines():
-                    print(line)
-                    if line:
-                        new_response = line.strip()
-                        yield new_response
-        except httpx.HTTPError as e:
-            raise Exception(f"HTTP request failed: {str(e)}")
+    s = requests.Session()
+    with s.post(API_URL, headers=headers, json=data, stream=True) as resp:
+        for line in resp.iter_content(decode_unicode=True):
+            if line:
+                yield line
+
+    # async with httpx.AsyncClient() as client:
+    #     try:
+    #         async with client.stream('POST', API_URL, json=data) as response:
+    #             if response.status_code != 200:
+    #                 raise Exception(f"Error: Server responded with status code {response.status_code}")
+
+    #             async for line in response.aiter_lines():
+    #                 print(line)
+    #                 if line:
+    #                     new_response = line.strip()
+    #                     yield new_response
+    #     except httpx.HTTPError as e:
+    #         raise Exception(f"HTTP request failed: {str(e)}")
 
 
 async def generate(
