@@ -53,6 +53,7 @@ async def rag_inf_api(
                     raise Exception(f"Error: Server responded with status code {response.status_code}")
 
                 async for line in response.aiter_lines():
+                    print(line)
                     if line:
                         new_response = line.strip()
                         yield new_response
@@ -85,8 +86,6 @@ async def generate(
         repetition_penalty,
     )
     async for response in stream:
-        response = response.replace("\n", "\\n")
-        print(response)
         yield history + [(question, response)]
 
 
