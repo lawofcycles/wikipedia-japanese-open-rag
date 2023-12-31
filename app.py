@@ -60,6 +60,7 @@ async def generate(
                 yield history + [(question, error_message)]
                 return
 
+            response_text = ""
             async for line in response.aiter_lines():
                 if line:
                     response_text += line.strip()
