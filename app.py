@@ -48,16 +48,15 @@ async def rag_inf_api(
 
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.stream('POST',API_URL, json=data)
+            async with client.stream('POST',API_URL, json=data) as response:
+                if response.status_code != 200:
+                    raise Exception(f"Error: Server responded with status code {response.status_code}")
 
-            if response.status_code != 200:
-                raise Exception(f"Error: Server responded with status code {response.status_code}")
-
-            async for line in response.aiter_lines():
-                if line:
-                    new_response = line.strip()
-                    print(new_response)
-                    yield new_response
+                async for line in response.aiter_lines():
+                    if line:
+                        new_response = line.strip()
+                        print(new_response)
+                        yield new_response
         except httpx.HTTPError as e:
             raise Exception(f"HTTP request failed: {str(e)}")
 
