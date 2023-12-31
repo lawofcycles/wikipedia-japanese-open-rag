@@ -26,6 +26,50 @@ def delete_prev_fn(history: list[tuple[str, str]]) -> tuple[list[tuple[str, str]
     return history, message or ''
 
 
+async def rag_inf_api(
+    question: str,
+    history_with_input: list[tuple[str, str]],
+    max_new_tokens: int,
+    temperature: float,
+    top_p: float,
+    top_k: int,
+    do_sample: bool,
+    repetition_penalty: float,) -> AsyncGenerator:
+
+    data = {
+    "question": question,
+    "max_new_tokens": max_new_tokens,
+    "temperature": temperature,
+    "top_p": top_p,
+    "top_k": top_k,
+    "do_sample": do_sample,
+    "repetition_penalty": repetition_penalty
+    }
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(API_URL, json=data)
+
+            if response.status_code != 200:
+                raise f"Error: Server responded with status code {response.status_code}"
+
+            last_response = ""
+            async for line in response.aiter_lines():
+                if line:
+                    new_response = line.strip()
+                    if new_response.startswith(last_response):
+                        new_characters = new_response[len(last_response):]
+                        last_response += new_response
+                        if new_characters:
+                            yield ''.join(last_response)
+                    else:
+                        last_response = new_response
+                        yield ''.join(last_response)
+        except httpx.HTTPError as e:
+            raise f"HTTP request failed: {str(e)}"
+            
+
+
 async def generate(
     question: str,
     history_with_input: list[tuple[str, str]],
@@ -40,43 +84,19 @@ async def generate(
         raise ValueError
 
     history = history_with_input[:-1]
+    stream = rag_inf_api(
+        question,
+        history_with_input,
+        max_new_tokens,
+        temperature,
+        top_p,
+        top_k,
+        do_sample,
+        repetition_penalty,
+    )
+    async for response in stream:
+        yield history + [(question, response)]
 
-    data = {
-        "question": question,
-        "max_new_tokens": max_new_tokens,
-        "temperature": temperature,
-        "top_p": top_p,
-        "top_k": top_k,
-        "do_sample": do_sample,
-        "repetition_penalty": repetition_penalty
-    }
-
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(API_URL, json=data)
-
-            if response.status_code != 200:
-                error_message = f"Error: Server responded with status code {response.status_code}"
-                yield history + [(question, error_message)]
-                return
-
-            last_response = ""
-            async for line in response.aiter_lines():
-                if line:
-                    new_response = line.strip()
-                    if new_response.startswith(last_response):
-                        # 前回のレスポンスにない新しい文字だけを取得
-                        new_characters = new_response[len(last_response):]
-                        last_response = new_response
-                        if new_characters:
-                            yield history + [(question, last_response)]
-                    else:
-                        # 異なるレスポンスが来た場合（通常は発生しない）
-                        last_response = new_response
-                        yield history + [(question, last_response)]
-        except httpx.HTTPError as e:
-            error_message = f"HTTP request failed: {str(e)}"
-            yield history + [(question, error_message)]
 
 def convert_history_to_str(history: list[tuple[str, str]]) -> str:
     res = []
