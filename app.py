@@ -87,6 +87,7 @@ async def generate(
         repetition_penalty,
     )
     async for response in stream:
+        response += response
         yield history + [(question, response)]
 
 

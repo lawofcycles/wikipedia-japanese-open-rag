@@ -81,10 +81,10 @@ class InferenceEngine:
         results_generator = self.llm_engine.generate(prompt, sampling_params, request_id)
 
         async def stream_results() -> AsyncGenerator:
-            # async for request_output in results_generator:
-            #     yield ''.join([output.text for output in request_output.outputs])
             async for request_output in results_generator:
-                yield request_output.outputs[-1].text
+                yield ''.join([output.text for output in request_output.outputs])
+            # async for request_output in results_generator:
+            #     yield request_output.outputs[-1].text
         if stream:
             return stream_results()
         else:
