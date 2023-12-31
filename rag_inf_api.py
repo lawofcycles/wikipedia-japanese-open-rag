@@ -82,7 +82,7 @@ class InferenceEngine:
 
         async def stream_results() -> AsyncGenerator:
             async for request_output in results_generator:
-                print([output.text for output in request_output.outputs])
+                print(''.join([output.text for output in request_output.outputs]))
                 yield ''.join([output.text for output in request_output.outputs])
         if stream:
             return stream_results()
