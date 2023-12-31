@@ -124,7 +124,6 @@ async def instruct(body: QuestionRequest):
             repetition_penalty=body.repetition_penalty,
             stream=True,
         ):
-            print(item)
             yield item
 
     return StreamingResponse(generate(), media_type="text/event-stream")

@@ -1,11 +1,15 @@
 from typing import AsyncGenerator, List, Tuple
 import gradio as gr
 import httpx
+from rag_inf import InferenceEngine
 
 MAX_MAX_NEW_TOKENS = 2048
 DEFAULT_MAX_NEW_TOKENS = 512
 MAX_INPUT_TOKEN_LENGTH = 4000
 API_URL = "http://localhost:8000/question"
+API_MODE = False
+if API_MODE:
+    inferenceEngine = InferenceEngine()
 
 TITLE = '## multilingual-e5-largeとELYZA-japanese-Llama-2-13b-instructによるWikipedia日本語ページをコーパスとするRAGアプリ'
 
@@ -55,8 +59,6 @@ async def rag_inf_api(
                 async for line in response.aiter_text():
                     if line:
                         new_response = line.strip()
-                        print(new_response)
-                        print('----------------')
                         yield new_response
         except httpx.HTTPError as e:
             raise Exception(f"HTTP request failed: {str(e)}")
@@ -76,16 +78,29 @@ async def generate(
         raise ValueError
 
     history = history_with_input[:-1]
-    stream = rag_inf_api(
-        question,
-        history_with_input,
-        max_new_tokens,
-        temperature,
-        top_p,
-        top_k,
-        do_sample,
-        repetition_penalty,
-    )
+
+    if API_MODE:
+        stream = rag_inf_api(
+            question,
+            history_with_input,
+            max_new_tokens,
+            temperature,
+            top_p,
+            top_k,
+            do_sample,
+            repetition_penalty,
+        )
+    else:
+        stream = await inferenceEngine.run(
+        question=question,
+        max_new_tokens=max_new_tokens,
+        temperature=float(temperature),
+        top_p=float(top_p),
+        top_k=top_k,
+        do_sample=do_sample,
+        repetition_penalty=float(repetition_penalty),
+        stream = True,
+        )
     async for response in stream:
         yield history + [(question, response)]
 
