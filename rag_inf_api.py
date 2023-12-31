@@ -82,7 +82,6 @@ class InferenceEngine:
 
         async def stream_results() -> AsyncGenerator:
             async for request_output in results_generator:
-                print(''.join([output.text for output in request_output.outputs]))
                 yield ''.join([output.text for output in request_output.outputs])
         if stream:
             return stream_results()
@@ -125,6 +124,7 @@ async def instruct(body: QuestionRequest):
             repetition_penalty=body.repetition_penalty,
             stream=True,
         ):
+            print(item)
             yield item
 
     return StreamingResponse(generate(), media_type="text/event-stream")
