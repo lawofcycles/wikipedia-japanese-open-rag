@@ -1,0 +1,12 @@
+[Unit]
+Description=RAG inf Fast API server. Ansewer the question based on wikipedia ja page
+After=network.target
+
+[Service]
+User=[linux-user]
+Group=[linux-group]
+WorkingDirectory=[project directory path]
+ExecStart=[path to python env]/gunicorn -w 1 -k uvicorn.workers.UvicornWorker app.rag_ing_api:app
+
+[Install]
+WantedBy=multi-user.target
