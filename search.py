@@ -1,6 +1,5 @@
 from typing import List, Tuple
 import faiss
-from time import time
 import torch
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -38,19 +37,16 @@ class TextSearcher:
 
 
     def search(self, question: str, top_k: int, search_text_prefix: str = "query") -> Tuple[List[Tuple[float, dict]], float, float]:
-        start_time = time()
         emb = self.text_to_emb(question, search_text_prefix)
-        emb_exec_time = time() - start_time
         scores, indexes = self.faiss_index.search(emb, top_k)
-        faiss_search_time = time() - start_time - emb_exec_time
         scores = scores[0]
         indexes = indexes[0]
         results = []
-        for idx, score in zip(indexes, scores):  # type: ignore
+        for idx, score in zip(indexes, scores):
             idx = int(idx)
             passage = self.dataset[idx]
             results.append((score, passage))
-        return results, emb_exec_time, faiss_search_time
+        return results
     
     def to_contexts(self, passages: List[dict]) -> str:
         contexts = ""

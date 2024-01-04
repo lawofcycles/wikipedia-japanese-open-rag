@@ -91,7 +91,7 @@ class InferenceEngine:
 
 
     async def search_contexts(self, question: str) -> Tuple[List[str], List[float]]:
-        search_results, emb_exec_time, faiss_search_time = self.searcher.search(
+        search_results = self.searcher.search(
             question,
             top_k=5,
         )
