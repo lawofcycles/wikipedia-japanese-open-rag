@@ -6,7 +6,7 @@ from rag_inf import InferenceEngine
 
 # コマンドライン引数の解析
 parser = argparse.ArgumentParser(description="RAGアプリの設定")
-parser.add_argument("--api_mode", action="store_true", help="APIモードを有効にする")
+parser.add_argument("--api_mode", required=True, type=bool, help="APIモードを指定する (True or False)")
 args = parser.parse_args()
 
 MAX_MAX_NEW_TOKENS = 2048
