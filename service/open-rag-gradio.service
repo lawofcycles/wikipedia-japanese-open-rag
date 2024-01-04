@@ -6,7 +6,10 @@ After=network.target
 User=[linux-user]
 Group=[linux-group]
 WorkingDirectory=[project directory path]
+ExecStartPre=[path to python env] -m pip install -r requirements.txt
 ExecStart=[path to python env] app.py
+TimeoutStartSec=0
+Restart=never
 
 [Install]
 WantedBy=multi-user.target

@@ -1,14 +1,20 @@
 from typing import AsyncGenerator, List, Tuple
+import argparse
 import gradio as gr
 import httpx
 from rag_inf import InferenceEngine
+
+# コマンドライン引数の解析
+parser = argparse.ArgumentParser(description="RAGアプリの設定")
+parser.add_argument("--api_mode", action="store_true", help="APIモードを有効にする")
+args = parser.parse_args()
 
 MAX_MAX_NEW_TOKENS = 2048
 DEFAULT_MAX_NEW_TOKENS = 512
 MAX_INPUT_TOKEN_LENGTH = 4000
 API_URL = "http://localhost:8000/question"
-API_MODE = False
-if API_MODE:
+API_MODE = args.api_mode
+if not API_MODE:
     inferenceEngine = InferenceEngine()
 
 TITLE = '## multilingual-e5-largeとELYZA-japanese-Llama-2-13b-instructによるWikipedia日本語ページをコーパスとするRAGアプリ'
@@ -124,7 +130,7 @@ with gr.Blocks(css='style.css') as demo:
             textbox = gr.Textbox(
                 container=False,
                 show_label=False,
-                placeholder='おとぎ銃士 赤ずきんのあらすじを詳しく教えて',
+                placeholder='おとぎ銃士赤ずきんのあらすじを教えて',
                 scale=10,
                 lines=3,
             )
@@ -309,4 +315,4 @@ with gr.Blocks(css='style.css') as demo:
         outputs=output_textbox,
     )
 
-demo.queue(max_size=5).launch(server_name='0.0.0.0',share=True)
+demo.queue(max_size=5).launch(server_name='0.0.0.0',share=False)
