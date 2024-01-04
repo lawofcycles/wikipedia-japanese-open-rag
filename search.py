@@ -36,7 +36,7 @@ class TextSearcher:
         return self.emb_model.encode([prefix + text], normalize_embeddings=True)
 
 
-    def search(self, question: str, top_k: int, search_text_prefix: str = "query") -> Tuple[List[Tuple[float, dict]], float, float]:
+    def search(self, question: str, top_k: int, search_text_prefix: str = "query: ") -> Tuple[List[Tuple[float, dict]], float, float]:
         emb = self.text_to_emb(question, search_text_prefix)
         scores, indexes = self.faiss_index.search(emb, top_k)
         scores = scores[0]
