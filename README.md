@@ -1,5 +1,7 @@
 # wikipedia-japanese-open-rag
 Wikipediaの日本語記事を元に、ユーザの質問に回答するGradioベースのRAGのサンプル。 
+
+[実装の背景と詳細の解説](https://bering.hatenadiary.com/entry/2024/01/05/195141)
 ### コーパス
 - fivehints氏による[singletongue/wikipedia-utils](https://huggingface.co/datasets/singletongue/wikipedia-utils)
 - hotchpotch氏による[同データのembeddings,faiss index](https://huggingface.co/datasets/hotchpotch/wikipedia-passages-jawiki-embeddings)
