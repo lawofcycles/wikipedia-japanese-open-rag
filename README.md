@@ -43,7 +43,7 @@ python app.py # 同一プロセスでGUIとRAG(検索、推論)を実行
 #### APIモード
 ```shell
 pip install -r requirements.txt
-python app.py --api_mode
+python app.py --api_mode # UIのみを起動。検索、推論時はgunicornのapiを呼び出す
 gunicorn -w 1 --timeout 0 -k uvicorn.workers.UvicornWorker rag_inf_api:app # 適宜別ノードから起動
 ```
 
