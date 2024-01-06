@@ -7,7 +7,7 @@ User=[linux-user]
 Group=[linux-group]
 WorkingDirectory=[project directory path]
 ExecStartPre=[path to python env] -m pip install -r requirements.txt
-ExecStart=[path to python env]/gunicorn -w 1 -k uvicorn.workers.UvicornWorker rag_inf_api:app
+ExecStart=[path to python env]/gunicorn --timeout 0 -w 1 -k uvicorn.workers.UvicornWorker rag_inf_api:app
 TimeoutStartSec=0
 Restart=never
 [Install]
