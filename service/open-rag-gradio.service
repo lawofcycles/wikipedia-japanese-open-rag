@@ -7,7 +7,7 @@ User=[linux-user]
 Group=[linux-group]
 WorkingDirectory=[project directory path]
 ExecStartPre=[path to python env] -m pip install -r requirements.txt
-ExecStart=[path to python env] app.py --api_mode False
+ExecStart=[path to python env] app.py --api_mode
 TimeoutStartSec=0
 Restart=never
 

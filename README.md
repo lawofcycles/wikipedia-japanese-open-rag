@@ -36,11 +36,12 @@ APIモードでは、推論部分をFast APIに切り出しており、n台の�
 #### Stand Aloneモード
 ```shell
 pip install -r requirements.txt
-python app.py --api_mode False
+python app.py # 同一プロセスでGUIとRAG(検索、推論)を実行
 ```
 #### APIモード
 ```shell
 pip install -r requirements.txt
-python app.py --api_mode True
+python app.py --api_mode
 gunicorn -w 1 -k uvicorn.workers.UvicornWorker rag_inf_api:app # 適宜別ノードから起動
 ```
+
